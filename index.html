@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#0b1220" />
+    <title>Shoe Log</title>
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="./icons/icon-192.png" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header>
+        <h1>👟 Shoe Log</h1>
+        <p>Track miles by shoe.</p>
+      </header>
+
+      <section class="card">
+        <h2>Add Shoe</h2>
+        <form id="shoe-form" class="stack">
+          <input name="name" placeholder="Shoe name (e.g., Daily Trainer)" required />
+          <input name="model" placeholder="Brand / Model (optional)" />
+          <input name="startMiles" type="number" min="0" step="0.1" placeholder="Starting miles (default 0)" />
+          <input name="retireAt" type="number" min="1" step="1" placeholder="Retire at miles (optional, e.g., 400)" />
+          <button type="submit">Add Shoe</button>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>Log Run</h2>
+        <form id="run-form" class="stack">
+          <select name="shoeId" id="run-shoe" required></select>
+          <input name="miles" type="number" min="0.1" step="0.1" placeholder="Miles run" required />
+          <input name="date" type="date" required />
+          <button type="submit">Log Miles</button>
+        </form>
+        <p id="status" class="status"></p>
+      </section>
+
+      <section class="card">
+        <h2>Your Shoes</h2>
+        <div id="shoe-list" class="list"></div>
+      </section>
+
+      <section class="card">
+        <h2>Recent Runs</h2>
+        <div id="run-list" class="list"></div>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
