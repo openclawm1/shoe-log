@@ -18,6 +18,12 @@
         <p>Track miles per shoe and know when to replace.</p>
       </header>
 
+      <section class="card dashboard" aria-label="Summary">
+        <h2>Dashboard</h2>
+        <div id="summary-cards" class="summary-grid"></div>
+        <div id="alerts" class="alerts"></div>
+      </section>
+
       <section class="card controls">
         <button id="export-btn" type="button">Export Backup</button>
         <button id="import-btn" type="button" class="btn-muted">Import Backup</button>
@@ -26,22 +32,47 @@
 
       <section class="card">
         <h2>Add Shoe</h2>
-        <form id="shoe-form" class="stack">
-          <input name="name" placeholder="Shoe name (e.g., Daily Trainer)" required />
-          <input name="model" placeholder="Brand / Model (optional)" />
-          <input name="startMiles" inputmode="decimal" type="number" min="0" step="0.1" placeholder="Starting miles (default 0)" />
-          <input name="retireAt" inputmode="numeric" type="number" min="1" step="1" placeholder="Retire at miles (optional, e.g., 400)" />
+        <form id="shoe-form" class="stack" novalidate>
+          <label>
+            <span class="label">Shoe name</span>
+            <input name="name" placeholder="e.g., Daily Trainer" required />
+          </label>
+          <label>
+            <span class="label">Brand / Model</span>
+            <input name="model" placeholder="optional" />
+          </label>
+          <label>
+            <span class="label">Starting miles</span>
+            <input name="startMiles" inputmode="decimal" type="number" min="0" step="0.1" placeholder="default 0" />
+          </label>
+          <label>
+            <span class="label">Retire at miles</span>
+            <input name="retireAt" inputmode="numeric" type="number" min="1" step="1" placeholder="optional (e.g., 400)" />
+          </label>
+          <p id="shoe-error" class="error" aria-live="polite"></p>
           <button type="submit">Add Shoe</button>
+          <p id="shoe-saved" class="saved" aria-live="polite"></p>
         </form>
       </section>
 
       <section class="card">
         <h2>Log Run</h2>
-        <form id="run-form" class="stack">
-          <select name="shoeId" id="run-shoe" required></select>
-          <input name="miles" inputmode="decimal" type="number" min="0.1" step="0.1" placeholder="Miles run" required />
-          <input name="date" type="date" required />
+        <form id="run-form" class="stack" novalidate>
+          <label>
+            <span class="label">Shoe</span>
+            <select name="shoeId" id="run-shoe" required></select>
+          </label>
+          <label>
+            <span class="label">Miles</span>
+            <input name="miles" inputmode="decimal" type="number" min="0.1" step="0.1" placeholder="Miles run" required />
+          </label>
+          <label>
+            <span class="label">Date</span>
+            <input name="date" type="date" required />
+          </label>
+          <p id="run-error" class="error" aria-live="polite"></p>
           <button type="submit">Log Miles</button>
+          <p id="run-saved" class="saved" aria-live="polite"></p>
         </form>
         <p id="status" class="status" aria-live="polite"></p>
       </section>
@@ -57,13 +88,26 @@
       </section>
 
       <section class="card tiny">
-        <p><strong>Privacy:</strong> Your data stays on your device (local storage) unless you export and share it.</p>
-        <p class="meta">Draft form inputs auto-save on this device.</p>
-        <p class="meta">All shoe and mileage entries are saved automatically.</p>
+        <p><strong>Privacy:</strong> Your data stays on your device unless you export and share it.</p>
+        <p class="meta">All shoe and mileage entries auto-save locally.</p>
         <p><a href="mailto:?subject=Shoe%20Log%20Feedback&body=I%20have%20feedback%20for%20Shoe%20Log%3A%20">Share feedback</a></p>
-        <p class="meta">Shoe Log v1.3.0</p>
+        <p class="meta">Shoe Log v1.4.0</p>
       </section>
     </main>
+
+    <dialog id="edit-modal" class="modal">
+      <form id="edit-form" method="dialog" class="stack">
+        <h3 id="edit-title">Edit</h3>
+        <div id="edit-fields" class="stack"></div>
+        <p id="edit-error" class="error" aria-live="polite"></p>
+        <div class="actions modal-actions">
+          <button type="button" class="btn-muted" id="edit-cancel">Cancel</button>
+          <button type="submit">Save</button>
+        </div>
+      </form>
+    </dialog>
+
+    <div id="toast" class="toast" aria-live="polite"></div>
 
     <script src="./app.js"></script>
   </body>
