@@ -18,81 +18,117 @@
         <p>Track miles per shoe and know when to replace.</p>
       </header>
 
-      <section class="card dashboard" aria-label="Summary">
-        <h2>Dashboard</h2>
-        <div id="summary-cards" class="summary-grid"></div>
-        <div id="alerts" class="alerts"></div>
+      <section id="page-home" class="page" data-page="home">
+        <section id="onboarding" class="card" hidden>
+          <h2>Welcome</h2>
+          <p class="meta">Add your first shoe, then log runs in seconds. Your data auto-saves on this device.</p>
+          <button id="onboarding-dismiss" type="button">Got it</button>
+        </section>
+
+        <section class="card dashboard" aria-label="Summary">
+          <h2>Dashboard</h2>
+          <div id="summary-cards" class="summary-grid"></div>
+          <div id="alerts" class="alerts"></div>
+        </section>
+
+        <section class="card">
+          <h2>Recent Runs</h2>
+          <div id="run-list" class="list"></div>
+        </section>
       </section>
 
-      <section class="card controls">
-        <button id="export-btn" type="button">Export Backup</button>
-        <button id="import-btn" type="button" class="btn-muted">Import Backup</button>
-        <input id="import-file" type="file" accept="application/json" hidden />
+      <section id="page-log" class="page" data-page="log" hidden>
+        <section class="card">
+          <h2>Log Run</h2>
+          <form id="run-form" class="stack" novalidate>
+            <label>
+              <span class="label">Shoe</span>
+              <select name="shoeId" id="run-shoe" required></select>
+            </label>
+            <label>
+              <span class="label">Miles</span>
+              <input name="miles" inputmode="decimal" type="number" min="0.1" step="0.1" placeholder="Miles run" required />
+            </label>
+            <label>
+              <span class="label">Date</span>
+              <input name="date" type="date" required />
+            </label>
+            <p id="run-error" class="error" aria-live="polite"></p>
+            <button type="submit">Log Miles</button>
+            <p id="run-saved" class="saved" aria-live="polite"></p>
+          </form>
+          <p id="status" class="status" aria-live="polite"></p>
+        </section>
       </section>
 
-      <section class="card">
-        <h2>Add Shoe</h2>
-        <form id="shoe-form" class="stack" novalidate>
-          <label>
-            <span class="label">Shoe name</span>
-            <input name="name" placeholder="e.g., Daily Trainer" required />
-          </label>
-          <label>
-            <span class="label">Brand / Model</span>
-            <input name="model" placeholder="optional" />
-          </label>
-          <label>
-            <span class="label">Starting miles</span>
-            <input name="startMiles" inputmode="decimal" type="number" min="0" step="0.1" placeholder="default 0" />
-          </label>
-          <label>
-            <span class="label">Retire at miles</span>
-            <input name="retireAt" inputmode="numeric" type="number" min="1" step="1" placeholder="optional (e.g., 400)" />
-          </label>
-          <p id="shoe-error" class="error" aria-live="polite"></p>
-          <button type="submit">Add Shoe</button>
-          <p id="shoe-saved" class="saved" aria-live="polite"></p>
-        </form>
+      <section id="page-shoes" class="page" data-page="shoes" hidden>
+        <section class="card">
+          <h2>Add Shoe</h2>
+          <form id="shoe-form" class="stack" novalidate>
+            <label>
+              <span class="label">Shoe name</span>
+              <input name="name" placeholder="e.g., Daily Trainer" required />
+            </label>
+            <label>
+              <span class="label">Brand / Model</span>
+              <input name="model" placeholder="optional" />
+            </label>
+            <label>
+              <span class="label">Starting miles</span>
+              <input name="startMiles" inputmode="decimal" type="number" min="0" step="0.1" placeholder="default 0" />
+            </label>
+            <label>
+              <span class="label">Retire at miles</span>
+              <input name="retireAt" inputmode="numeric" type="number" min="1" step="1" placeholder="optional (e.g., 400)" />
+            </label>
+            <p id="shoe-error" class="error" aria-live="polite"></p>
+            <button type="submit">Add Shoe</button>
+            <p id="shoe-saved" class="saved" aria-live="polite"></p>
+          </form>
+        </section>
+
+        <section class="card">
+          <h2>Your Shoes</h2>
+          <div id="shoe-list" class="list"></div>
+        </section>
       </section>
 
-      <section class="card">
-        <h2>Log Run</h2>
-        <form id="run-form" class="stack" novalidate>
+      <section id="page-settings" class="page" data-page="settings" hidden>
+        <section class="card controls">
+          <button id="export-btn" type="button">Export Backup</button>
+          <button id="import-btn" type="button" class="btn-muted">Import Backup</button>
+          <input id="import-file" type="file" accept="application/json" hidden />
+        </section>
+
+        <section class="card stack">
+          <h2>Sync (Scaffold)</h2>
+          <p class="meta">Coming next: optional account sync across devices.</p>
           <label>
-            <span class="label">Shoe</span>
-            <select name="shoeId" id="run-shoe" required></select>
+            <span class="label">Enable Sync</span>
+            <input id="sync-enabled" type="checkbox" />
           </label>
           <label>
-            <span class="label">Miles</span>
-            <input name="miles" inputmode="decimal" type="number" min="0.1" step="0.1" placeholder="Miles run" required />
+            <span class="label">Daily reminder time</span>
+            <input id="reminder-time" type="time" value="05:30" />
           </label>
-          <label>
-            <span class="label">Date</span>
-            <input name="date" type="date" required />
-          </label>
-          <p id="run-error" class="error" aria-live="polite"></p>
-          <button type="submit">Log Miles</button>
-          <p id="run-saved" class="saved" aria-live="polite"></p>
-        </form>
-        <p id="status" class="status" aria-live="polite"></p>
+          <button id="save-settings" type="button">Save Settings</button>
+          <p id="settings-status" class="saved" aria-live="polite"></p>
+        </section>
+
+        <section class="card tiny">
+          <p><strong>Privacy:</strong> Your data stays on your device unless you export and share it.</p>
+          <p class="meta">All shoe and mileage entries auto-save locally.</p>
+          <p><a href="mailto:?subject=Shoe%20Log%20Feedback&body=I%20have%20feedback%20for%20Shoe%20Log%3A%20">Share feedback</a></p>
+          <p class="meta">Shoe Log v1.5.0</p>
+        </section>
       </section>
 
-      <section class="card">
-        <h2>Your Shoes</h2>
-        <div id="shoe-list" class="list"></div>
-      </section>
-
-      <section class="card">
-        <h2>Recent Runs</h2>
-        <div id="run-list" class="list"></div>
-      </section>
-
-      <section class="card tiny">
-        <p><strong>Privacy:</strong> Your data stays on your device unless you export and share it.</p>
-        <p class="meta">All shoe and mileage entries auto-save locally.</p>
-        <p><a href="mailto:?subject=Shoe%20Log%20Feedback&body=I%20have%20feedback%20for%20Shoe%20Log%3A%20">Share feedback</a></p>
-        <p class="meta">Shoe Log v1.4.0</p>
-      </section>
+      <nav class="tabbar" aria-label="Primary">
+        <button type="button" class="tab active" data-tab="home">Home</button>
+        <button type="button" class="tab" data-tab="log">Log Run</button>
+        <button type="button" class="tab" data-tab="shoes">Shoes</button>
+        <button type="button" class="tab" data-tab="settings">Settings</button>
+      </nav>
     </main>
 
     <dialog id="edit-modal" class="modal">

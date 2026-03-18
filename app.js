@@ -1,5 +1,5 @@
-const STORAGE_KEY = 'shoe-log-v1.4';
-const DRAFT_KEY = 'shoe-log-drafts-v1.4';
+const STORAGE_KEY = 'shoe-log-v1.5';
+const DRAFT_KEY = 'shoe-log-drafts-v1.5';
 
 const shoeForm = document.getElementById('shoe-form');
 const runForm = document.getElementById('run-form');
@@ -26,33 +26,64 @@ const editFields = document.getElementById('edit-fields');
 const editError = document.getElementById('edit-error');
 const editCancel = document.getElementById('edit-cancel');
 
+const tabs = Array.from(document.querySelectorAll('.tab'));
+const pages = Array.from(document.querySelectorAll('.page'));
+const onboardingEl = document.getElementById('onboarding');
+const onboardingDismissBtn = document.getElementById('onboarding-dismiss');
+const syncEnabledEl = document.getElementById('sync-enabled');
+const reminderTimeEl = document.getElementById('reminder-time');
+const saveSettingsBtn = document.getElementById('save-settings');
+const settingsStatusEl = document.getElementById('settings-status');
+
 const today = new Date().toISOString().slice(0, 10);
 runForm.elements.date.value = today;
 
 let editContext = null;
 let state = loadState();
 restoreDrafts();
+initUiState();
 render();
 
 function loadState() {
   try {
     const raw =
       localStorage.getItem(STORAGE_KEY) ||
+      localStorage.getItem('shoe-log-v1.4') ||
       localStorage.getItem('shoe-log-v1.3') ||
       localStorage.getItem('shoe-log-v1.2') ||
       localStorage.getItem('shoe-log-v1.1');
 
-    if (!raw) return { schemaVersion: 4, shoes: [], runs: [], inputLog: [] };
+    if (!raw) {
+      return {
+        schemaVersion: 5,
+        shoes: [],
+        runs: [],
+        inputLog: [],
+        settings: { activeTab: 'home', onboardingDismissed: false, syncEnabled: false, reminderTime: '05:30' }
+      };
+    }
 
     const parsed = JSON.parse(raw);
     return {
-      schemaVersion: parsed.schemaVersion || 4,
+      schemaVersion: parsed.schemaVersion || 5,
       shoes: Array.isArray(parsed.shoes) ? parsed.shoes : [],
       runs: Array.isArray(parsed.runs) ? parsed.runs : [],
-      inputLog: Array.isArray(parsed.inputLog) ? parsed.inputLog : []
+      inputLog: Array.isArray(parsed.inputLog) ? parsed.inputLog : [],
+      settings: {
+        activeTab: parsed?.settings?.activeTab || 'home',
+        onboardingDismissed: Boolean(parsed?.settings?.onboardingDismissed),
+        syncEnabled: Boolean(parsed?.settings?.syncEnabled),
+        reminderTime: parsed?.settings?.reminderTime || '05:30'
+      }
     };
   } catch {
-    return { schemaVersion: 4, shoes: [], runs: [], inputLog: [] };
+    return {
+      schemaVersion: 5,
+      shoes: [],
+      runs: [],
+      inputLog: [],
+      settings: { activeTab: 'home', onboardingDismissed: false, syncEnabled: false, reminderTime: '05:30' }
+    };
   }
 }
 
@@ -159,6 +190,52 @@ function setSavedNow(targetEl) {
   targetEl.textContent = `Saved ${new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`;
 }
 
+function switchTab(tabName) {
+  pages.forEach((page) => {
+    page.hidden = page.dataset.page !== tabName;
+  });
+
+  tabs.forEach((tab) => {
+    tab.classList.toggle('active', tab.dataset.tab === tabName);
+  });
+
+  state.settings.activeTab = tabName;
+  saveState();
+}
+
+function initUiState() {
+  const activeTab = state?.settings?.activeTab || 'home';
+  switchTab(activeTab);
+
+  onboardingEl.hidden = Boolean(state?.settings?.onboardingDismissed);
+
+  if (syncEnabledEl) syncEnabledEl.checked = Boolean(state?.settings?.syncEnabled);
+  if (reminderTimeEl) reminderTimeEl.value = state?.settings?.reminderTime || '05:30';
+
+  tabs.forEach((tab) => {
+    tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+  });
+
+  if (onboardingDismissBtn) {
+    onboardingDismissBtn.addEventListener('click', () => {
+      onboardingEl.hidden = true;
+      state.settings.onboardingDismissed = true;
+      saveState();
+      showToast('Onboarding hidden');
+    });
+  }
+
+  if (saveSettingsBtn) {
+    saveSettingsBtn.addEventListener('click', () => {
+      state.settings.syncEnabled = Boolean(syncEnabledEl?.checked);
+      state.settings.reminderTime = reminderTimeEl?.value || '05:30';
+      saveState();
+      settingsStatusEl.textContent = `Settings saved at ${new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`;
+      showToast('Settings saved');
+    });
+  }
+}
+
 shoeForm.addEventListener('input', saveDrafts);
 runForm.addEventListener('input', saveDrafts);
 
@@ -258,13 +335,24 @@ importFileInput.addEventListener('change', async (e) => {
     if (!confirm('Replace current data with this backup?')) return;
 
     state = {
-      schemaVersion: parsed.schemaVersion || 4,
+      schemaVersion: parsed.schemaVersion || 5,
       shoes: parsed.shoes,
       runs: parsed.runs,
-      inputLog: Array.isArray(parsed.inputLog) ? parsed.inputLog : []
+      inputLog: Array.isArray(parsed.inputLog) ? parsed.inputLog : [],
+      settings: {
+        activeTab: parsed?.settings?.activeTab || 'home',
+        onboardingDismissed: Boolean(parsed?.settings?.onboardingDismissed),
+        syncEnabled: Boolean(parsed?.settings?.syncEnabled),
+        reminderTime: parsed?.settings?.reminderTime || '05:30'
+      }
     };
 
     saveState();
+    if (syncEnabledEl) syncEnabledEl.checked = Boolean(state?.settings?.syncEnabled);
+    if (reminderTimeEl) reminderTimeEl.value = state?.settings?.reminderTime || '05:30';
+    switchTab(state?.settings?.activeTab || 'home');
+    onboardingEl.hidden = Boolean(state?.settings?.onboardingDismissed);
+
     setStatus('Backup imported.');
     showToast('Backup imported');
     render();
