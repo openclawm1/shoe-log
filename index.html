@@ -18,13 +18,19 @@
         <p>Track miles per shoe and know when to replace.</p>
       </header>
 
+      <section class="card controls">
+        <button id="export-btn" type="button">Export Backup</button>
+        <button id="import-btn" type="button" class="btn-muted">Import Backup</button>
+        <input id="import-file" type="file" accept="application/json" hidden />
+      </section>
+
       <section class="card">
         <h2>Add Shoe</h2>
         <form id="shoe-form" class="stack">
           <input name="name" placeholder="Shoe name (e.g., Daily Trainer)" required />
           <input name="model" placeholder="Brand / Model (optional)" />
-          <input name="startMiles" type="number" min="0" step="0.1" placeholder="Starting miles (default 0)" />
-          <input name="retireAt" type="number" min="1" step="1" placeholder="Retire at miles (optional, e.g., 400)" />
+          <input name="startMiles" inputmode="decimal" type="number" min="0" step="0.1" placeholder="Starting miles (default 0)" />
+          <input name="retireAt" inputmode="numeric" type="number" min="1" step="1" placeholder="Retire at miles (optional, e.g., 400)" />
           <button type="submit">Add Shoe</button>
         </form>
       </section>
@@ -33,11 +39,11 @@
         <h2>Log Run</h2>
         <form id="run-form" class="stack">
           <select name="shoeId" id="run-shoe" required></select>
-          <input name="miles" type="number" min="0.1" step="0.1" placeholder="Miles run" required />
+          <input name="miles" inputmode="decimal" type="number" min="0.1" step="0.1" placeholder="Miles run" required />
           <input name="date" type="date" required />
           <button type="submit">Log Miles</button>
         </form>
-        <p id="status" class="status"></p>
+        <p id="status" class="status" aria-live="polite"></p>
       </section>
 
       <section class="card">
@@ -48,6 +54,14 @@
       <section class="card">
         <h2>Recent Runs</h2>
         <div id="run-list" class="list"></div>
+      </section>
+
+      <section class="card tiny">
+        <p><strong>Privacy:</strong> Your data stays on your device (local storage) unless you export and share it.</p>
+        <p class="meta">Draft form inputs auto-save on this device.</p>
+        <p class="meta">All shoe and mileage entries are saved automatically.</p>
+        <p><a href="mailto:?subject=Shoe%20Log%20Feedback&body=I%20have%20feedback%20for%20Shoe%20Log%3A%20">Share feedback</a></p>
+        <p class="meta">Shoe Log v1.3.0</p>
       </section>
     </main>
 

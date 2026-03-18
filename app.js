@@ -1,4 +1,5 @@
-const STORAGE_KEY = 'shoe-log-v1.1';
+const STORAGE_KEY = 'shoe-log-v1.3';
+const DRAFT_KEY = 'shoe-log-drafts-v1.3';
 
 const shoeForm = document.getElementById('shoe-form');
 const runForm = document.getElementById('run-form');
@@ -14,20 +15,25 @@ const today = new Date().toISOString().slice(0, 10);
 runForm.elements.date.value = today;
 
 let state = loadState();
+restoreDrafts();
 render();
 
 function loadState() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { schemaVersion: 1, shoes: [], runs: [] };
+    const raw =
+      localStorage.getItem(STORAGE_KEY) ||
+      localStorage.getItem('shoe-log-v1.2') ||
+      localStorage.getItem('shoe-log-v1.1');
+    if (!raw) return { schemaVersion: 3, shoes: [], runs: [], inputLog: [] };
     const parsed = JSON.parse(raw);
     return {
-      schemaVersion: parsed.schemaVersion || 1,
+      schemaVersion: parsed.schemaVersion || 3,
       shoes: Array.isArray(parsed.shoes) ? parsed.shoes : [],
-      runs: Array.isArray(parsed.runs) ? parsed.runs : []
+      runs: Array.isArray(parsed.runs) ? parsed.runs : [],
+      inputLog: Array.isArray(parsed.inputLog) ? parsed.inputLog : []
     };
   } catch {
-    return { schemaVersion: 1, shoes: [], runs: [] };
+    return { schemaVersion: 3, shoes: [], runs: [], inputLog: [] };
   }
 }
 
@@ -35,16 +41,86 @@ function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
+function loadDrafts() {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return { shoe: {}, run: {} };
+    const parsed = JSON.parse(raw);
+    return {
+      shoe: parsed?.shoe || {},
+      run: parsed?.run || {}
+    };
+  } catch {
+    return { shoe: {}, run: {} };
+  }
+}
+
+function saveDrafts() {
+  const drafts = {
+    shoe: {
+      name: shoeForm.elements.name.value,
+      model: shoeForm.elements.model.value,
+      startMiles: shoeForm.elements.startMiles.value,
+      retireAt: shoeForm.elements.retireAt.value
+    },
+    run: {
+      shoeId: runForm.elements.shoeId.value,
+      miles: runForm.elements.miles.value,
+      date: runForm.elements.date.value || today
+    }
+  };
+
+  localStorage.setItem(DRAFT_KEY, JSON.stringify(drafts));
+}
+
+function restoreDrafts() {
+  const drafts = loadDrafts();
+
+  shoeForm.elements.name.value = drafts.shoe.name || '';
+  shoeForm.elements.model.value = drafts.shoe.model || '';
+  shoeForm.elements.startMiles.value = drafts.shoe.startMiles || '';
+  shoeForm.elements.retireAt.value = drafts.shoe.retireAt || '';
+
+  runForm.elements.miles.value = drafts.run.miles || '';
+  runForm.elements.date.value = drafts.run.date || today;
+}
+
+function resetShoeDraft() {
+  shoeForm.reset();
+  saveDrafts();
+}
+
+function resetRunDraft() {
+  runForm.reset();
+  runForm.elements.date.value = today;
+  saveDrafts();
+}
+
 function id() {
   return Math.random().toString(36).slice(2, 10);
 }
 
+function logInput(type, payload) {
+  state.inputLog.unshift({
+    id: id(),
+    type,
+    payload,
+    capturedAt: new Date().toISOString()
+  });
+
+  if (state.inputLog.length > 1000) {
+    state.inputLog = state.inputLog.slice(0, 1000);
+  }
+}
+
 function milesForShoe(shoeId) {
-  return state.runs.filter((r) => r.shoeId === shoeId).reduce((sum, r) => sum + Number(r.miles), 0);
+  return state.runs
+    .filter((r) => r.shoeId === shoeId)
+    .reduce((sum, r) => sum + (Number(r.miles) || 0), 0);
 }
 
 function totalMiles(shoe) {
-  return Number(shoe.startMiles || 0) + milesForShoe(shoe.id);
+  return (Number(shoe.startMiles) || 0) + milesForShoe(shoe.id);
 }
 
 function getTag(shoe, total) {
@@ -55,23 +131,35 @@ function getTag(shoe, total) {
   return { text: 'Active', cls: 'ok' };
 }
 
+shoeForm.addEventListener('input', saveDrafts);
+runForm.addEventListener('input', saveDrafts);
+
 shoeForm.addEventListener('submit', (e) => {
   e.preventDefault();
   const form = new FormData(shoeForm);
   const name = String(form.get('name') || '').trim();
   if (!name) return;
 
-  state.shoes.unshift({
+  const shoe = {
     id: id(),
     name,
     model: String(form.get('model') || '').trim(),
-    startMiles: Number(form.get('startMiles') || 0),
+    startMiles: Number(form.get('startMiles') || 0) || 0,
     retireAt: form.get('retireAt') ? Number(form.get('retireAt')) : null,
     createdAt: new Date().toISOString()
+  };
+
+  state.shoes.unshift(shoe);
+  logInput('shoe-added', {
+    shoeId: shoe.id,
+    name: shoe.name,
+    model: shoe.model,
+    startMiles: shoe.startMiles,
+    retireAt: shoe.retireAt
   });
 
   saveState();
-  shoeForm.reset();
+  resetShoeDraft();
   setStatus('Shoe added.');
   render();
 });
@@ -87,10 +175,17 @@ runForm.addEventListener('submit', (e) => {
 
   if (!shoeId || !miles || miles <= 0 || !date) return setStatus('Enter valid run details.');
 
-  state.runs.unshift({ id: id(), shoeId, miles, date, createdAt: new Date().toISOString() });
+  const run = { id: id(), shoeId, miles, date, createdAt: new Date().toISOString() };
+
+  state.runs.unshift(run);
+  logInput('run-added', {
+    runId: run.id,
+    shoeId: run.shoeId,
+    miles: run.miles,
+    date: run.date
+  });
   saveState();
-  runForm.reset();
-  runForm.elements.date.value = today;
+  resetRunDraft();
   setStatus('Run logged.');
   render();
 });
@@ -121,9 +216,10 @@ importFileInput.addEventListener('change', async (e) => {
     if (!confirm('Replace current data with this backup?')) return;
 
     state = {
-      schemaVersion: parsed.schemaVersion || 1,
+      schemaVersion: parsed.schemaVersion || 3,
       shoes: parsed.shoes,
-      runs: parsed.runs
+      runs: parsed.runs,
+      inputLog: Array.isArray(parsed.inputLog) ? parsed.inputLog : []
     };
     saveState();
     setStatus('Backup imported.');
@@ -149,7 +245,9 @@ function render() {
 }
 
 function renderShoeSelect() {
+  const selected = runForm.elements.shoeId.value || loadDrafts().run.shoeId || '';
   runShoeSelect.innerHTML = '';
+
   if (!state.shoes.length) {
     const opt = document.createElement('option');
     opt.value = '';
@@ -171,6 +269,10 @@ function renderShoeSelect() {
     opt.textContent = shoe.model ? `${shoe.name} — ${shoe.model}` : shoe.name;
     runShoeSelect.appendChild(opt);
   });
+
+  if (selected && state.shoes.some((s) => s.id === selected)) {
+    runShoeSelect.value = selected;
+  }
 }
 
 function renderShoes() {
@@ -231,7 +333,18 @@ document.addEventListener('click', (e) => {
 
 function deleteRun(runId) {
   if (!confirm('Delete this run?')) return;
+  const run = state.runs.find((r) => r.id === runId);
   state.runs = state.runs.filter((r) => r.id !== runId);
+
+  if (run) {
+    logInput('run-deleted', {
+      runId: run.id,
+      shoeId: run.shoeId,
+      miles: run.miles,
+      date: run.date
+    });
+  }
+
   saveState();
   setStatus('Run deleted.');
   render();
@@ -246,8 +359,17 @@ function editRun(runId) {
   const date = prompt('Date (YYYY-MM-DD):', run.date);
   if (!date) return;
 
+  const previous = { miles: run.miles, date: run.date, shoeId: run.shoeId };
+
   run.miles = miles;
   run.date = date;
+
+  logInput('run-edited', {
+    runId: run.id,
+    before: previous,
+    after: { miles: run.miles, date: run.date, shoeId: run.shoeId }
+  });
+
   saveState();
   setStatus('Run updated.');
   render();
@@ -258,8 +380,20 @@ function deleteShoe(shoeId) {
   if (!shoe) return;
   if (!confirm(`Delete ${shoe.name}? Runs for this shoe will also be deleted.`)) return;
 
+  const relatedRuns = state.runs.filter((r) => r.shoeId === shoeId);
+
   state.shoes = state.shoes.filter((s) => s.id !== shoeId);
   state.runs = state.runs.filter((r) => r.shoeId !== shoeId);
+
+  logInput('shoe-deleted', {
+    shoeId: shoe.id,
+    name: shoe.name,
+    model: shoe.model,
+    startMiles: shoe.startMiles,
+    retireAt: shoe.retireAt,
+    removedRunCount: relatedRuns.length
+  });
+
   saveState();
   setStatus('Shoe deleted.');
   render();
@@ -272,11 +406,32 @@ function editShoe(shoeId) {
   const name = prompt('Shoe name:', shoe.name);
   if (!name) return;
   const model = prompt('Brand / Model (optional):', shoe.model || '') ?? '';
+  const startRaw = prompt('Starting miles:', String(shoe.startMiles ?? 0));
+  if (startRaw === null) return;
   const retireRaw = prompt('Retire at miles (optional):', shoe.retireAt ?? '');
+
+  const previous = {
+    name: shoe.name,
+    model: shoe.model,
+    startMiles: shoe.startMiles,
+    retireAt: shoe.retireAt
+  };
 
   shoe.name = name.trim();
   shoe.model = model.trim();
+  shoe.startMiles = Number(startRaw || 0) || 0;
   shoe.retireAt = retireRaw ? Number(retireRaw) : null;
+
+  logInput('shoe-edited', {
+    shoeId: shoe.id,
+    before: previous,
+    after: {
+      name: shoe.name,
+      model: shoe.model,
+      startMiles: shoe.startMiles,
+      retireAt: shoe.retireAt
+    }
+  });
 
   saveState();
   setStatus('Shoe updated.');
